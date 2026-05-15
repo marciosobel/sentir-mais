@@ -28,32 +28,39 @@ const sidebarButtons = ref<SidebarButton[]>([
 </script>
 
 <template>
-  <div class="card sidebar-container">
-    <div class="logo-container">
-      <img src="@/assets/logo.svg" />
-      <div class="logo-text-container">
-        sentir<Plus class="logo-text-icon" :size="16" :strokeWidth="4" />
+  <div class="outter-sidebar-container">
+    <div class="card sidebar-container">
+      <div class="logo-container">
+        <img src="@/assets/logo.svg" />
+        <div class="logo-text-container">
+          sentir<Plus class="logo-text-icon" :size="16" :strokeWidth="4" />
+        </div>
       </div>
-    </div>
 
-    <nav>
-      <ul>
-        <li v-for="button in sidebarButtons" :key="button.path">
-          <button
-            @click="$router.push(button.path)"
-            class="card sidebar-button"
-            :class="{ active: $route.path == button.path }"
-          >
-            <component :is="button.icon" :size="24" />
-            {{ button.label }}
-          </button>
-        </li>
-      </ul>
-    </nav>
+      <nav>
+        <ul>
+          <li v-for="button in sidebarButtons" :key="button.path">
+            <button
+              @click="$router.push(button.path)"
+              class="card sidebar-button"
+              :class="{ active: $route.path == button.path }"
+            >
+              <component :is="button.icon" :size="24" />
+              {{ button.label }}
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.outter-sidebar-container {
+  padding: 1rem;
+  padding-right: 0;
+}
+
 .sidebar-container {
   --width: 220px;
   min-width: var(--width);
@@ -111,6 +118,8 @@ ul > * + * {
 
 .logo-container img {
   min-width: 44px;
+  pointer-events: none;
+  user-select: none;
 }
 
 .logo-text-container {
@@ -120,6 +129,7 @@ ul > * + * {
   font-weight: 800;
   text-transform: uppercase;
   line-height: 1;
+  user-select: none;
 }
 
 .logo-text-container svg {
