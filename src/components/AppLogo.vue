@@ -15,7 +15,6 @@ import { Plus } from '@lucide/vue'
 .logo-container {
   display: flex;
   gap: 6px;
-  margin-bottom: 10px;
 }
 
 .logo-container img {

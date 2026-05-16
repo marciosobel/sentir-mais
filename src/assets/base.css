@@ -1,9 +1,14 @@
 :root {
+  /* "card" effect colors. */
   --card-background: #fff;
   --card-foreground: #000;
   --card-border-width: 2px;
   --card-border-color: #000;
   --card-border-radius: 10px;
+
+  /* outline variables. mostly for accessibility when focusing elements with tab. */
+  --outline-color: rgb(0, 0, 0);
+  --outline-width: 2px;
 }
 
 *,
@@ -21,6 +26,11 @@ a {
 
 a:visited {
   color: inherit;
+}
+
+input:focus,
+button:focus {
+  outline: var(--outline-width) solid var(--outline-color);
 }
 
 body {
@@ -52,7 +62,5 @@ body {
 
 #app {
   display: flex;
-  gap: 8px;
   width: 100%;
-  height: 100vh;
 }

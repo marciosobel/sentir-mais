@@ -28,46 +28,44 @@ const sidebarButtons = ref<SidebarButton[]>([
 </script>
 
 <template>
-  <div class="outter-sidebar-container">
-    <div class="card sidebar-container">
-      <div class="logo-container">
-        <img src="@/assets/logo.svg" />
-        <div class="logo-text-container">
-          sentir<Plus class="logo-text-icon" :size="16" :strokeWidth="4" />
-        </div>
+  <div class="card sidebar-container">
+    <div class="logo-container">
+      <img src="@/assets/logo.svg" />
+      <div class="logo-text-container">
+        sentir<Plus class="logo-text-icon" :size="16" :strokeWidth="4" />
       </div>
-
-      <nav>
-        <ul>
-          <li v-for="button in sidebarButtons" :key="button.path">
-            <button
-              @click="$router.push(button.path)"
-              class="card sidebar-button"
-              :class="{ active: $route.path == button.path }"
-            >
-              <component :is="button.icon" :size="24" />
-              {{ button.label }}
-            </button>
-          </li>
-        </ul>
-      </nav>
     </div>
+
+    <nav>
+      <ul>
+        <li v-for="button in sidebarButtons" :key="button.path">
+          <button
+            @click="$router.push(button.path)"
+            class="card sidebar-button"
+            :class="{ active: $route.path == button.path }"
+          >
+            <component :is="button.icon" :size="24" />
+            {{ button.label }}
+          </button>
+        </li>
+      </ul>
+    </nav>
   </div>
 </template>
 
 <style scoped>
-.outter-sidebar-container {
-  padding: 1rem;
-  padding-right: 0;
-}
-
 .sidebar-container {
+  position: sticky;
+
   --width: 220px;
   min-width: var(--width);
   width: var(--width);
-  height: 100%;
+
+  top: 1rem;
+  height: calc(100vh - 2rem);
 
   padding: 10px;
+  margin: 1rem;
 }
 
 ul {

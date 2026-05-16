@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Logo from '@/components/Logo.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import { SendHorizontal } from '@lucide/vue'
 import { ref } from 'vue'
 
@@ -12,9 +12,9 @@ const sendFirstMessage = (e: SubmitEvent) => {
 </script>
 
 <template>
-  <div id="main-section">
+  <main>
     <div id="start-chat-container">
-      <Logo />
+      <AppLogo />
 
       <form id="initial-message-form" @submit="sendFirstMessage">
         <input class="card" v-model="currentMessage" placeholder="Como está se sentindo?" />
@@ -23,19 +23,32 @@ const sendFirstMessage = (e: SubmitEvent) => {
         </button>
       </form>
     </div>
-  </div>
+  </main>
 </template>
 
-<style>
-#main-section {
+<style scoped>
+main {
+  width: 100%;
+}
+
+#start-chat-container {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-
-  overflow-y: scroll;
+  gap: 8px;
 
   width: 100%;
+  height: 100vh;
+}
+
+#initial-message-form {
+  width: 50%;
+  max-width: 600px;
+
+  display: flex;
+  justify-content: center;
+  position: relative;
 }
 
 #initial-message-form input {
@@ -47,26 +60,6 @@ const sendFirstMessage = (e: SubmitEvent) => {
 
 #initial-message-form input::placeholder {
   font-style: italic;
-}
-
-#start-chat-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  flex-shrink: 0;
-  width: 100%;
-  height: 100vh;
-  min-height: 100vh;
-}
-
-#initial-message-form {
-  width: 50%;
-  max-width: 600px;
-
-  display: flex;
-  justify-content: center;
-  position: relative;
 }
 
 #initial-message-form button {
@@ -94,6 +87,6 @@ const sendFirstMessage = (e: SubmitEvent) => {
 #initial-message-form button:hover {
   cursor: pointer;
   opacity: 75%;
-  background: rgba(0, 0, 0, 20%);
+  background: rgba(0, 0, 0, 10%);
 }
 </style>
