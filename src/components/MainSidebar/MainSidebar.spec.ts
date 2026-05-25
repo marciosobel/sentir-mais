@@ -9,7 +9,7 @@ describe('MainSidebar', () => {
       path: '/',
     }
     const mockRouter = {
-      push: vitest.fn(),
+      push: vitest.fn<() => void>(),
     }
 
     const wrapper = mount(MainSidebar, {
