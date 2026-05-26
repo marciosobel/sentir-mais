@@ -91,16 +91,12 @@ export class MockChat implements IChat {
       sender: Sender.USER,
     }
 
-    const responseContent = `i'm a bot, i cant answer this message:
-"${message.content}"
-How does this work?
-idk
-\`\`\`javascript
-export function hi() {
-    return 2; // troxa
-}
-\`\`\`
-tendeu hahaha`
+    const responseContent = `This is an example generated response.
+In an actual AI context, I would analyse your message to answer accordingly.
+
+The message input received is: \`${content}\`.
+
+**Markdown** *should* __be__ ~supported~`
 
     const response: Message = {
       id: `${this.newId()}`,

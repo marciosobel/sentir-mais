@@ -23,6 +23,5 @@ describe('MainSidebar', () => {
 
     const sidebarButtons = wrapper.findAll('li')
     expect(sidebarButtons.length).toBe(3)
-    expect(true).toBe(true)
   })
 })
