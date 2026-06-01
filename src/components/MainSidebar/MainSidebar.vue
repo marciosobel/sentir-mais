@@ -1,5 +1,14 @@
 <script lang="ts" setup>
-import { CalendarDays, HeartHandshake, HouseHeart, Plus, type LucideIcon } from '@lucide/vue'
+import { useAuthStore } from '@/stores/auth.store'
+import {
+  CalendarDays,
+  HeartHandshake,
+  HouseHeart,
+  Plus,
+  UserRound,
+  LogOut,
+  type LucideIcon,
+} from '@lucide/vue'
 import { ref } from 'vue'
 
 type SidebarButton = {
@@ -25,6 +34,12 @@ const sidebarButtons = ref<SidebarButton[]>([
     path: '/services',
   },
 ])
+
+const authStore = useAuthStore()
+
+async function logout() {
+  authStore.logout()
+}
 </script>
 
 <template>
@@ -50,12 +65,66 @@ const sidebarButtons = ref<SidebarButton[]>([
         </li>
       </ul>
     </nav>
+
+    <div class="user-info">
+      <div class="user-icon"><UserRound /></div>
+      <p class="user-email">e-mail@email.com</p>
+      <button @click="logout">
+        <LogOut :size="20" />
+      </button>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.user-info button {
+  background: rgba(0, 0, 0, 0);
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 100px;
+  padding: 4px;
+  transition: background 200ms ease;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-info button:hover {
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.user-email {
+  font-size: 0.725rem;
+}
+
+.user-info {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 100px;
+  padding: 6px;
+}
+
+.user-icon svg {
+  stroke: rgba(0, 0, 0, 0.75);
+}
+
 .sidebar-container {
   position: sticky;
+
+  display: flex;
+  flex-direction: column;
 
   --width: 220px;
   min-width: var(--width);
