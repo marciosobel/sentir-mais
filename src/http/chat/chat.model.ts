@@ -10,6 +10,6 @@ export type Message = {
 }
 
 export enum Sender {
-  USER,
-  ASSISTANT,
+  USER = 0,
+  ASSISTANT = 1,
 }

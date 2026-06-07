@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useAuthStore } from '@/stores/auth.store'
+import type { User } from '@/http/auth/auth.model'
 import {
   CalendarDays,
   HeartHandshake,
@@ -9,7 +10,7 @@ import {
   LogOut,
   type LucideIcon,
 } from '@lucide/vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 type SidebarButton = {
   icon: LucideIcon
@@ -36,6 +37,8 @@ const sidebarButtons = ref<SidebarButton[]>([
 ])
 
 const authStore = useAuthStore()
+
+const currentUser = computed<User | null>(() => authStore.user)
 
 async function logout() {
   authStore.logout()
@@ -68,7 +71,7 @@ async function logout() {
 
     <div class="user-info">
       <div class="user-icon"><UserRound /></div>
-      <p class="user-email">e-mail@email.com</p>
+      <p class="user-email">{{ currentUser?.email ?? '' }}</p>
       <button @click="logout">
         <LogOut :size="20" />
       </button>

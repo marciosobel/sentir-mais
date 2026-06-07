@@ -8,15 +8,15 @@ enum RequestMethods {
   DELETE = 'DELETE',
 }
 
-const auth = useAuthStore()
-
 function makeRequest(
   method: RequestMethods,
-  baseUrl?: string,
+  apiBaseUrl = '',
 ): <T, TBody = object>(uri: string, body?: TBody, options?: RequestInit) => Promise<T> {
   return async (uri, body, options = {}) => {
+    const auth = useAuthStore()
     const token = auth.token
-    const response = await fetch(baseUrl + uri, {
+    const requestUrl = `${apiBaseUrl}${uri}`
+    const response = await fetch(requestUrl, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -29,23 +29,23 @@ function makeRequest(
 
     if (response.status === 401) {
       auth.logout()
-      throw new Error(`${method} request to ${baseUrl + uri} failed with status ${response.status}`)
+      throw new Error(`${method} request to ${requestUrl} failed with status ${response.status}`)
     }
 
     if (!response.ok) {
-      throw new Error(`${method} request to ${baseUrl + uri} failed with status ${response.status}`)
+      throw new Error(`${method} request to ${requestUrl} failed with status ${response.status}`)
     }
 
     return response.json()
   }
 }
 
-const newApi = (baseUrl?: string) => ({
-  get: makeRequest(RequestMethods.GET, baseUrl),
-  post: makeRequest(RequestMethods.POST, baseUrl),
-  put: makeRequest(RequestMethods.PUT, baseUrl),
-  patch: makeRequest(RequestMethods.PATCH, baseUrl),
-  delete: makeRequest(RequestMethods.DELETE, baseUrl),
+const newApi = (apiBaseUrl?: string) => ({
+  get: makeRequest(RequestMethods.GET, apiBaseUrl),
+  post: makeRequest(RequestMethods.POST, apiBaseUrl),
+  put: makeRequest(RequestMethods.PUT, apiBaseUrl),
+  patch: makeRequest(RequestMethods.PATCH, apiBaseUrl),
+  delete: makeRequest(RequestMethods.DELETE, apiBaseUrl),
 })
 
-export const api = newApi()
+export const api = newApi(import.meta.env.API_URL)

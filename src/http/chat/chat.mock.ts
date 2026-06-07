@@ -1,5 +1,5 @@
 import { Sender, type Chat, type Message } from './chat.model'
-import type { CreateChatResponse, IChat } from './chat.interface'
+import type { CreateChatResponse, IChat, ListMessagesResponse } from './chat.interface'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const STORAGE_KEY = 'mock-chats'
@@ -107,5 +107,18 @@ The message input received is: \`${content}\`.
     chat.messages.push(message, response)
     this.saveChats()
     return response
+  }
+
+  async listMessages(chatId: string): Promise<ListMessagesResponse> {
+    await wait(120)
+    const chat = this.chats[chatId]
+    if (!chat) {
+      throw new Error('Chat not found!')
+    }
+
+    return {
+      chatId: chat.id,
+      messages: chat.messages,
+    }
   }
 }
