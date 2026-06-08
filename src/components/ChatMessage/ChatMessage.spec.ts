@@ -1,18 +1,20 @@
 import { mount } from '@vue/test-utils'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import ChatMessage from './ChatMessage.vue'
+import { Sender } from '@/http/chat'
 
-type Message = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
+vi.mock('@/components/markdown', () => ({
+  MarkdownRenderer: {
+    props: ['source'],
+    template: '<div class="markdown-renderer">{{ source }}</div>',
+  },
+}))
 
 describe('ChatMessage', () => {
   it('renders user message correctly', () => {
-    const message: Message = {
+    const message = {
       id: '1',
-      role: 'user',
+      sender: Sender.USER,
       content: 'Hello, AI!',
     }
     const wrapper = mount(ChatMessage, {
@@ -28,9 +30,9 @@ describe('ChatMessage', () => {
   })
 
   it('renders assistant message correctly when not typing', () => {
-    const message: Message = {
+    const message = {
       id: '2',
-      role: 'assistant',
+      sender: Sender.ASSISTANT,
       content: 'This is a **Markdown** message.',
     }
     const wrapper = mount(ChatMessage, {
@@ -41,12 +43,13 @@ describe('ChatMessage', () => {
       },
     })
     expect(wrapper.classes()).toContain('assistant-message')
+    expect(wrapper.text()).toContain('This is a **Markdown** message.')
   })
 
   it('renders typing assistant message correctly', () => {
-    const message: Message = {
+    const message = {
       id: '3',
-      role: 'assistant',
+      sender: Sender.ASSISTANT,
       content: 'This is a **Markdown** message.',
     }
     const typingContent = 'This is a **Markdown** me...'
@@ -57,7 +60,7 @@ describe('ChatMessage', () => {
         typingContent: typingContent,
       },
     })
-    expect(wrapper.text()).toContain('This is a Markdown me...')
+    expect(wrapper.text()).toContain('This is a **Markdown** me...')
     expect(wrapper.classes()).toContain('assistant-message')
   })
 })
