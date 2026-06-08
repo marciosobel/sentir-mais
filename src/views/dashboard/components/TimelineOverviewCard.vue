@@ -2,7 +2,7 @@
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import { computed } from 'vue'
-import { BarChart } from 'vue-chrts'
+import { BarChart, LineChart } from 'vue-chrts'
 import type { BulletLegendItemInterface } from 'vue-chrts'
 import type { DailySummary } from '@/http/dashboard'
 import { emotionKey, getEmotionLabel, getEmotionMeta } from '../emotions'
@@ -20,12 +20,24 @@ type TimelineChartRow = {
 
 const chartData = computed<TimelineChartRow[]>(() => {
   return props.days.map((day) => {
-    const dominant = day.dominantFeelings[0]
     const label = dayjs.utc(day.dayStart).format('DD/MM')
     const row: TimelineChartRow = { label }
+    const emotionCounts = new Map<string, number>()
 
-    if (dominant) {
-      row[emotionKey(dominant.label)] = dominant.confidence
+    for (const point of day.timelinePoints) {
+      const key = emotionKey(point.primaryFeeling)
+      emotionCounts.set(key, (emotionCounts.get(key) ?? 0) + 1)
+    }
+
+    for (const feeling of day.dominantFeelings) {
+      const key = emotionKey(feeling.label)
+      if (!emotionCounts.has(key)) {
+        emotionCounts.set(key, 0)
+      }
+    }
+
+    for (const [key, value] of emotionCounts.entries()) {
+      row[key] = value
     }
 
     return row
@@ -35,9 +47,11 @@ const chartData = computed<TimelineChartRow[]>(() => {
 const emotionKeys = computed(() => {
   const keys = new Set<string>()
   for (const day of props.days) {
-    const dominant = day.dominantFeelings[0]
-    if (dominant) {
-      keys.add(emotionKey(dominant.label))
+    for (const point of day.timelinePoints) {
+      keys.add(emotionKey(point.primaryFeeling))
+    }
+    for (const feeling of day.dominantFeelings) {
+      keys.add(emotionKey(feeling.label))
     }
   }
 
@@ -46,19 +60,19 @@ const emotionKeys = computed(() => {
 
 const categories = computed<Record<string, BulletLegendItemInterface>>(() => {
   return Object.fromEntries(
-    props.days
-      .map((day) => day.dominantFeelings[0]?.label)
-      .filter((label): label is string => !!label)
-      .filter((label, index, labels) => labels.indexOf(label) === index)
-      .map((label) => [
-        emotionKey(label),
-        {
-          name: getEmotionLabel(label),
-          color: getEmotionMeta(label).color,
-        },
-      ]),
+    emotionKeys.value.map((key) => [
+      key,
+      {
+        name: getEmotionLabel(key),
+        color: getEmotionMeta(key).color,
+      },
+    ]),
   )
 })
+
+const isSingleDay = computed(() => chartData.value.length === 1)
+
+const yFormatter = (tick: number | Date) => String(tick)
 </script>
 
 <template>
@@ -69,32 +83,59 @@ const categories = computed<Record<string, BulletLegendItemInterface>>(() => {
         <h2>Como seus sentimentos variaram ao longo dos dias</h2>
       </div>
       <p class="overview-copy">
-        Cada coluna mostra o sentimento dominante do dia e a intensidade estimada.
+        {{ isSingleDay
+          ? 'Como há apenas um dia no período, o gráfico mostra quantas vezes cada emoção apareceu nesse dia.'
+          : 'Cada linha acompanha quantas vezes uma emoção apareceu em cada dia do período.' }}
       </p>
     </div>
 
     <div v-if="chartData.length" class="chart-shell">
       <BarChart
+        v-if="isSingleDay"
         class="chart-shell"
         :data="chartData"
         :categories="categories"
         :y-axis="emotionKeys"
         x-axis="label"
-        :stacked="true"
+        :stacked="false"
         :height="260"
         :hide-legend="false"
         :hide-tooltip="false"
         :hide-x-axis="false"
-        :hide-y-axis="true"
+        :hide-y-axis="false"
         :padding="{ top: 12, right: 12, bottom: 0, left: 12 }"
         :radius="8"
-        :bar-padding="0.45"
-        :group-padding="0.25"
+        :bar-padding="0.3"
+        :group-padding="0.15"
         :x-domain-line="true"
+        :y-domain-line="true"
+        :x-grid-line="false"
+        :y-grid-line="true"
+        :y-formatter="yFormatter"
+      />
+      <LineChart
+        v-else
+        class="chart-shell"
+        :data="chartData"
+        :categories="categories"
+        :y-axis="emotionKeys"
+        x-axis="label"
+        :height="260"
+        :hide-legend="false"
+        :hide-tooltip="false"
+        :hide-x-axis="false"
+        :hide-y-axis="false"
+        :padding="{ top: 12, right: 12, bottom: 0, left: 12 }"
+        :x-domain-line="true"
+        :y-domain-line="true"
+        :line-width="3"
+        :x-grid-line="false"
+        :y-grid-line="true"
+        :y-formatter="yFormatter"
       />
     </div>
 
-    <p v-else class="empty-state">Ainda não há dias suficientes para montar o gráfico.</p>
+    <p v-else class="empty-state">Ainda não há eventos suficientes para montar o gráfico.</p>
   </section>
 </template>
 
@@ -157,6 +198,11 @@ const categories = computed<Record<string, BulletLegendItemInterface>>(() => {
 .chart-shell ::v-deep([fill='currentColor']) {
   stroke: #000 !important;
   fill: #000 !important;
+}
+
+.chart-shell ::v-deep(.grid-line),
+.chart-shell ::v-deep(line.grid-line) {
+  stroke: rgba(0, 0, 0, 0.14) !important;
 }
 
 .empty-state {
