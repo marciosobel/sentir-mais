@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import type { WeeklySummary } from '@/http/dashboard'
 import { BarChart } from 'vue-chrts'
 import type { BulletLegendItemInterface } from 'vue-chrts'
 import { computed } from 'vue'
 import { emotionKey, getEmotionMeta } from '../emotions'
+
+dayjs.extend(utc)
 
 const props = defineProps<{
   summary: WeeklySummary
@@ -31,14 +34,14 @@ const categoryKeys = computed(() => {
 
 // Build chart data per day of the week (7 days), use timelinePoints.primaryFeeling to mark single stack per day
 const chartData = computed<EmotionChartRow[]>(() => {
-  const weekStart = dayjs(props.summary.weekStart)
+  const weekStart = dayjs.utc(props.summary.weekStart)
   const rows: EmotionChartRow[] = []
 
   // create map date -> primaryFeeling (normalized key)
   const dateMap = new Map<string, string>()
   for (const tp of props.summary.timelinePoints || []) {
     const key = emotionKey(tp.primaryFeeling)
-    const d = dayjs(tp.date).startOf('day').toISOString()
+    const d = dayjs.utc(tp.date).startOf('day').toISOString()
     dateMap.set(d, key)
   }
 
@@ -94,7 +97,7 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
   if (typeof tick === 'string') return tick
 
   try {
-    return dayjs(tick).format('DD/MM')
+    return dayjs.utc(tick).format('DD/MM')
   } catch {
     return String(tick as unknown)
   }

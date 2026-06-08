@@ -16,3 +16,17 @@ export type WeeklySummary = {
   timelinePoints: TimelinePoint[]
   generatedAt: string
 }
+
+export type DailySummary = {
+  dayStart: string
+  dominantFeelings: FeelingScore[]
+  mainEvents: string[]
+  timelinePoints: TimelinePoint[]
+  generatedAt: string
+}
+
+export type DashboardTimeline = {
+  from: string
+  to: string
+  days: DailySummary[]
+}
