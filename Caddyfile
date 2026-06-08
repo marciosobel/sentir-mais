@@ -1,0 +1,7 @@
+:3000
+
+root * /srv
+
+# Serve static files, fallback to index.html for SPA routing
+try_files {path} /index.html
+file_server

@@ -1,0 +1,11 @@
+services:
+  frontend:
+    container_name: sentir-mais-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      API_URL: ${API_URL:-localhost:8001}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
