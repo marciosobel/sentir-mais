@@ -101,7 +101,9 @@ const visibleLegendEmotions = computed<VisibleLegendEmotion[]>(() =>
       return {
         key,
         label: category?.name?.toString() ?? getEmotionLabel(key),
-        color: Array.isArray(category?.color) ? category.color[0] : (category?.color ?? meta.color),
+        color: Array.isArray(category?.color)
+          ? category.color[0]!
+          : (category?.color ?? meta.color),
         icon: meta.icon,
       }
     }),
@@ -131,8 +133,8 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
   <section class="card emotions-card">
     <h2>Esta semana você esteve:</h2>
     <p class="chart-description">
-      Cada cor representa uma emoção diferente. As barras ficam lado a lado para mostrar
-      quantas vezes cada sentimento apareceu em cada dia da semana.
+      Cada cor representa uma emoção diferente. As barras ficam lado a lado para mostrar quantas
+      vezes cada sentimento apareceu em cada dia da semana.
     </p>
 
     <div class="content-row">
