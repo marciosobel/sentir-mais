@@ -18,6 +18,13 @@ type EmotionChartRow = {
   [key: string]: string | number
 }
 
+type VisibleLegendEmotion = {
+  key: string
+  label: string
+  color: string
+  icon: ReturnType<typeof getEmotionMeta>['icon']
+}
+
 const emotions = computed(() => props.summary.dominantFeelings)
 
 // Build categories keys: include dominant feelings + any primaryFeeling from timelinePoints
@@ -83,8 +90,21 @@ const categories = computed<Record<string, BulletLegendItemInterface>>(() => {
   )
 })
 
-const visibleLegendEmotions = computed(() =>
-  emotions.value.filter((emotion) => emotion.confidence > 0.4),
+const visibleLegendEmotions = computed<VisibleLegendEmotion[]>(() =>
+  emotions.value
+    .filter((emotion) => emotion.confidence > 0.4)
+    .map((emotion) => {
+      const key = emotionKey(emotion.label)
+      const category = categories.value[key]
+      const meta = getEmotionMeta(key)
+
+      return {
+        key,
+        label: category?.name?.toString() ?? getEmotionLabel(key),
+        color: Array.isArray(category?.color) ? category.color[0] : (category?.color ?? meta.color),
+        icon: meta.icon,
+      }
+    }),
 )
 
 const xFormatter = (tick: string | number | Date | undefined | null) => {
@@ -120,16 +140,12 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
         <ul class="emotion-legend">
           <li
             v-for="emotion in visibleLegendEmotions"
-            :key="emotion.label"
+            :key="emotion.key"
             class="emotion-legend-item"
-            :style="{ backgroundColor: getEmotionMeta(emotion.label).color }"
+            :style="{ backgroundColor: emotion.color }"
           >
-            <component
-              :is="getEmotionMeta(emotion.label).icon"
-              :size="18"
-              :style="{ color: '#000' }"
-            />
-            <span class="legend-label">{{ getEmotionLabel(emotion.label) }}</span>
+            <component :is="emotion.icon" :size="18" :style="{ color: '#000' }" />
+            <span class="legend-label">{{ emotion.label }}</span>
           </li>
         </ul>
       </aside>

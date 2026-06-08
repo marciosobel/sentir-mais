@@ -3,6 +3,23 @@ import { describe, expect, it, vi } from 'vitest'
 
 import WeeklyEmotionsCard from './WeeklyEmotionsCard.vue'
 
+function hexToRgbString(hex: string) {
+  const normalized = hex.replace('#', '')
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : normalized
+
+  const red = Number.parseInt(value.slice(0, 2), 16)
+  const green = Number.parseInt(value.slice(2, 4), 16)
+  const blue = Number.parseInt(value.slice(4, 6), 16)
+
+  return `rgb(${red}, ${green}, ${blue})`
+}
+
 const barChartProps = vi.hoisted(() => ({
   latest: null as null | Record<string, unknown>,
 }))
@@ -34,7 +51,7 @@ vi.mock('vue-chrts', () => ({
 
 describe('WeeklyEmotionsCard', () => {
   it('aggregates multiple emotion occurrences on the same day instead of keeping only the last one', () => {
-    mount(WeeklyEmotionsCard, {
+    const wrapper = mount(WeeklyEmotionsCard, {
       props: {
         summary: {
           weekStart: '2026-06-08T00:00:00Z',
@@ -75,5 +92,17 @@ describe('WeeklyEmotionsCard', () => {
     expect(props.categories.sad?.name).toBe('Triste')
     expect(props.categories.relaxed?.name).toBe('Calmo')
     expect(props.categories.happy?.name).toBe('Feliz')
+
+    const legendItems = wrapper.findAll('.emotion-legend-item')
+    expect(legendItems).toHaveLength(3)
+    expect(legendItems[0].attributes('style')).toContain(
+      `background-color: ${hexToRgbString(String(props.categories.sad?.color))}`,
+    )
+    expect(legendItems[1].attributes('style')).toContain(
+      `background-color: ${hexToRgbString(String(props.categories.happy?.color))}`,
+    )
+    expect(legendItems[2].attributes('style')).toContain(
+      `background-color: ${hexToRgbString(String(props.categories.relaxed?.color))}`,
+    )
   })
 })
