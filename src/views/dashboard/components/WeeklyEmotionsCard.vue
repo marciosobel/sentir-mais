@@ -5,7 +5,7 @@ import type { WeeklySummary } from '@/http/dashboard'
 import { BarChart } from 'vue-chrts'
 import type { BulletLegendItemInterface } from 'vue-chrts'
 import { computed } from 'vue'
-import { emotionKey, getEmotionMeta } from '../emotions'
+import { emotionKey, getEmotionLabel, getEmotionMeta } from '../emotions'
 
 dayjs.extend(utc)
 
@@ -37,12 +37,14 @@ const chartData = computed<EmotionChartRow[]>(() => {
   const weekStart = dayjs.utc(props.summary.weekStart)
   const rows: EmotionChartRow[] = []
 
-  // create map date -> primaryFeeling (normalized key)
-  const dateMap = new Map<string, string>()
+  // create map date -> emotion counts for that day
+  const dateMap = new Map<string, Map<string, number>>()
   for (const tp of props.summary.timelinePoints || []) {
     const key = emotionKey(tp.primaryFeeling)
     const d = dayjs.utc(tp.date).startOf('day').toISOString()
-    dateMap.set(d, key)
+    const dayCounts = dateMap.get(d) ?? new Map<string, number>()
+    dayCounts.set(key, (dayCounts.get(key) ?? 0) + 1)
+    dateMap.set(d, dayCounts)
   }
 
   for (let i = 0; i < 7; i++) {
@@ -50,8 +52,9 @@ const chartData = computed<EmotionChartRow[]>(() => {
     const iso = d.startOf('day').toISOString()
     const label = d.format('DD/MM')
     const row: EmotionChartRow = { label }
+    const dayCounts = dateMap.get(iso)
     for (const key of categoryKeys.value) {
-      row[key] = dateMap.get(iso) === key ? 1 : 0
+      row[key] = dayCounts?.get(key) ?? 0
     }
     rows.push(row)
   }
@@ -66,7 +69,7 @@ const categories = computed<Record<string, BulletLegendItemInterface>>(() => {
     emotionKeys.value.map((key) => {
       // try to find matching emotion label from dominant feelings first
       const found = emotions.value.find((e) => emotionKey(e.label) === key)
-      const label = found ? found.label : key
+      const label = found ? getEmotionLabel(found.label) : getEmotionLabel(key)
       const meta = getEmotionMeta(label)
 
       return [
@@ -107,6 +110,10 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
 <template>
   <section class="card emotions-card">
     <h2>Esta semana você esteve:</h2>
+    <p class="chart-description">
+      Cada cor representa uma emoção diferente. As barras ficam lado a lado para mostrar
+      quantas vezes cada sentimento apareceu em cada dia da semana.
+    </p>
 
     <div class="content-row">
       <aside class="legend-column" v-if="visibleLegendEmotions.length">
@@ -122,7 +129,7 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
               :size="18"
               :style="{ color: '#000' }"
             />
-            <span class="legend-label">{{ emotion.label }}</span>
+            <span class="legend-label">{{ getEmotionLabel(emotion.label) }}</span>
           </li>
         </ul>
       </aside>
@@ -135,7 +142,7 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
             :categories="categories"
             :y-axis="emotionKeys"
             x-axis="label"
-            :stacked="true"
+            :stacked="false"
             :height="220"
             :hide-legend="true"
             :hide-tooltip="false"
@@ -143,8 +150,8 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
             :hide-y-axis="true"
             :padding="{ top: 12, right: 12, bottom: 0, left: 12 }"
             :radius="8"
-            :bar-padding="0.8"
-            :group-padding="0.5"
+            :bar-padding="0.45"
+            :group-padding="0.35"
             :x-formatter="xFormatter"
             :x-domain-line="true"
           />
@@ -164,6 +171,12 @@ const xFormatter = (tick: string | number | Date | undefined | null) => {
 .emotions-card h2 {
   margin: 0 0 1rem;
   font-size: 1.125rem;
+}
+
+.chart-description {
+  margin: -0.5rem 0 1rem;
+  line-height: 1.45;
+  opacity: 0.78;
 }
 
 .chart-shell {

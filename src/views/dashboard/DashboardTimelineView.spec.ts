@@ -20,6 +20,13 @@ vi.mock('./components/TimelineDayCard.vue', () => ({
   },
 }))
 
+vi.mock('./components/TimelineOverviewCard.vue', () => ({
+  default: {
+    props: ['days'],
+    template: '<div class="timeline-overview-card">overview {{ days.length }}</div>',
+  },
+}))
+
 describe('DashboardTimelineView', () => {
   it('loads the timeline on mount and applies explicit range filters', async () => {
     getTimeline
@@ -56,6 +63,8 @@ describe('DashboardTimelineView', () => {
     await Promise.resolve()
 
     expect(getTimeline).toHaveBeenNthCalledWith(1, undefined, undefined)
+    expect(wrapper.text()).toContain('Um resumo diário')
+    expect(wrapper.text()).toContain('overview 1')
     expect(wrapper.text()).toContain('Bad meeting')
 
     const inputs = wrapper.findAll('input[type="date"]')
