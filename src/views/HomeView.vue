@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue'
 import { useChat } from '@/http'
+import { useChatHistoryStore } from '@/stores/chat-history.store'
 import { useInitialChatStore } from '@/stores/initial-chat'
 import { SendHorizontal } from '@lucide/vue'
 import { nextTick, ref } from 'vue'
@@ -8,6 +9,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const chat = useChat()
+const chatHistory = useChatHistoryStore()
 const initialStore = useInitialChatStore()
 const currentMessage = ref('')
 const isSubmitting = ref(false)
@@ -45,6 +47,7 @@ const sendFirstMessage = async (e: SubmitEvent) => {
   isSubmitting.value = true
   try {
     const { chatId, response } = await chat.createChat(trimmedMessage)
+    void chatHistory.refreshChats()
     await nextTick()
     updateFormTranslate()
     isChatCreated.value = true

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useAuth } from '@/http'
 import type { Auth, User } from '../http/auth/auth.model'
 import router from '@/router'
+import { useChatHistoryStore } from './chat-history.store'
 
 interface AuthState {
   user: User | null
@@ -47,6 +48,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
+      useChatHistoryStore().clear()
       this.user = null
       this.token = null
       router.push('/login')

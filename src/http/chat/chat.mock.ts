@@ -1,5 +1,5 @@
 import { Sender, type Chat, type Message } from './chat.model'
-import type { CreateChatResponse, IChat, ListMessagesResponse } from './chat.interface'
+import type { CreateChatResponse, IChat, ListChatsResponse, ListMessagesResponse } from './chat.interface'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const STORAGE_KEY = 'mock-chats'
@@ -20,6 +20,11 @@ export class MockChat implements IChat {
     if (storedChats) {
       try {
         this.chats = JSON.parse(storedChats)
+        const now = new Date().toISOString()
+        for (const chat of Object.values(this.chats)) {
+          chat.createdAt ||= now
+          chat.updatedAt ||= chat.createdAt
+        }
         // Find the highest id to continue autoincrement from there
         const maxId = Object.values(this.chats).reduce((max, chat) => {
           const chatMaxId = Math.max(...chat.messages.map((msg) => parseInt(msg.id)))
@@ -66,6 +71,8 @@ export class MockChat implements IChat {
 
     const chat: Chat = {
       id: `${id}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       messages: [message, response],
     }
 
@@ -105,8 +112,27 @@ The message input received is: \`${content}\`.
     }
 
     chat.messages.push(message, response)
+    chat.updatedAt = new Date().toISOString()
     this.saveChats()
     return response
+  }
+
+  async listChats(): Promise<ListChatsResponse> {
+    await wait(120)
+    const chats = Object.values(this.chats)
+      .map((chat) => {
+        const lastMessage = chat.messages[chat.messages.length - 1]
+        return {
+          id: chat.id,
+          createdAt: chat.createdAt,
+          updatedAt: chat.updatedAt,
+          lastMessagePreview: lastMessage?.content ?? '',
+          lastMessageAt: chat.updatedAt,
+        }
+      })
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+
+    return { chats }
   }
 
   async listMessages(chatId: string): Promise<ListMessagesResponse> {
