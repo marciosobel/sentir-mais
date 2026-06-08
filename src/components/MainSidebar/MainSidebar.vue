@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useAuthStore } from '@/stores/auth.store'
+import { useChatHistoryStore } from '@/stores/chat-history.store'
 import type { User } from '@/http/auth/auth.model'
 import {
   CalendarDays,
@@ -10,7 +11,9 @@ import {
   LogOut,
   type LucideIcon,
 } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 type SidebarButton = {
   icon: LucideIcon
@@ -37,8 +40,30 @@ const sidebarButtons = ref<SidebarButton[]>([
 ])
 
 const authStore = useAuthStore()
+const chatHistory = useChatHistoryStore()
+const route = useRoute()
+const router = useRouter()
 
 const currentUser = computed<User | null>(() => authStore.user)
+const { items: chatItems, isLoading, error } = storeToRefs(chatHistory)
+const currentChatId = computed(() =>
+  route.name === 'chat' && typeof route.params.id === 'string' ? route.params.id : '',
+)
+
+const formatChatTimestamp = (value: string) => {
+  if (!value) {
+    return ''
+  }
+
+  return new Date(value).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+  })
+}
+
+onMounted(() => {
+  void chatHistory.loadChats()
+})
 
 async function logout() {
   authStore.logout()
@@ -56,11 +81,17 @@ async function logout() {
 
     <nav>
       <ul>
+        <li>
+          <button @click="router.push('/')" class="card sidebar-button">
+            <Plus :size="24" />
+            Nova conversa
+          </button>
+        </li>
         <li v-for="button in sidebarButtons" :key="button.path">
           <button
-            @click="$router.push(button.path)"
+            @click="router.push(button.path)"
             class="card sidebar-button"
-            :class="{ active: $route.path == button.path }"
+            :class="{ active: route.path == button.path }"
           >
             <component :is="button.icon" :size="24" />
             {{ button.label }}
@@ -68,6 +99,30 @@ async function logout() {
         </li>
       </ul>
     </nav>
+
+    <section class="chat-history">
+      <p class="chat-history-title">Conversas</p>
+      <p v-if="isLoading" class="chat-history-status">Carregando...</p>
+      <p v-else-if="error" class="chat-history-status">{{ error }}</p>
+      <p v-else-if="chatItems.length === 0" class="chat-history-status">Nenhuma conversa ainda.</p>
+      <ul v-else class="chat-history-list">
+        <li v-for="chat in chatItems" :key="chat.id">
+          <button
+            class="card sidebar-button chat-history-button"
+            :class="{ active: currentChatId === chat.id }"
+            @click="router.push(`/chat/${chat.id}`)"
+          >
+            <span class="chat-history-row">
+              <span class="chat-history-id">{{ chat.id }}</span>
+              <span class="chat-history-date">{{ formatChatTimestamp(chat.lastMessageAt) }}</span>
+            </span>
+            <span class="chat-history-preview">
+              {{ chat.lastMessagePreview || 'Conversa sem mensagens.' }}
+            </span>
+          </button>
+        </li>
+      </ul>
+    </section>
 
     <div class="user-info">
       <div class="user-icon"><UserRound /></div>
@@ -167,6 +222,61 @@ ul > * + * {
 
   /* disable the `box-shadow` effect from the card styling */
   filter: none;
+}
+
+.chat-history {
+  margin-top: 18px;
+}
+
+.chat-history-title {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.chat-history-list {
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.chat-history-status {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.chat-history-button {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.chat-history-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.chat-history-id {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.chat-history-date {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.chat-history-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  text-align: left;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .sidebar-button:not(.active) {

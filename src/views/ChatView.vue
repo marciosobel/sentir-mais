@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useChat } from '@/http'
+import { useChatHistoryStore } from '@/stores/chat-history.store'
 import { useChatAnimationStore } from '@/stores/chat-animation'
 import { useInitialChatStore } from '@/stores/initial-chat'
 import {
@@ -18,10 +19,13 @@ import { Sender, type Message } from '@/http/chat'
 
 const route = useRoute()
 const chat = useChat()
+const chatHistory = useChatHistoryStore()
 const animationStore = useChatAnimationStore()
 const initialStore = useInitialChatStore()
 const currentMessage = ref('')
 const isSending = ref(false)
+const isLoadingMessages = ref(false)
+const loadErrorMessage = ref('')
 const messages = ref<Message[]>([])
 const chatContainerRef = ref<HTMLElement | null>(null)
 const messagesRef = ref<HTMLElement | null>(null)
@@ -52,7 +56,6 @@ const chatId = computed(() => (typeof route.params.id === 'string' ? route.param
 const initialAnimationKey = computed(() =>
   typeof route.query.animate === 'string' ? route.query.animate : '',
 )
-const messagesStorageKey = computed(() => (chatId.value ? `chat:${chatId.value}:messages` : ''))
 
 const isInputDisabled = computed(() => isSending.value || typingMessageId.value !== null)
 const isAllowingBottomOverscroll = computed(
@@ -198,7 +201,15 @@ const handleTouchMove = (event: TouchEvent) => {
 
 const sendMessage = async (e: SubmitEvent) => {
   e.preventDefault()
-  if (isInputDisabled.value || !currentMessage.value.trim() || !chatId.value) return
+  if (
+    isInputDisabled.value ||
+    isLoadingMessages.value ||
+    loadErrorMessage.value ||
+    !currentMessage.value.trim() ||
+    !chatId.value
+  ) {
+    return
+  }
 
   isSending.value = true
   const message = currentMessage.value.trim()
@@ -234,59 +245,69 @@ const sendMessage = async (e: SubmitEvent) => {
     const response = await chat.sendMessage(chatId.value, message)
     messages.value.push(response)
     startTyping(response)
+    void chatHistory.refreshChats()
   } finally {
     isSending.value = false
   }
 }
 
+const loadMessages = async () => {
+  if (!chatId.value) {
+    messages.value = []
+    return
+  }
+
+  isLoadingMessages.value = true
+  loadErrorMessage.value = ''
+
+  try {
+    const response = await chat.listMessages(chatId.value)
+    messages.value = response.messages
+    if (typingTimer) {
+      window.clearInterval(typingTimer)
+      typingTimer = undefined
+    }
+    typingMessageId.value = null
+    typingContent.value = ''
+    await chatHistory.refreshChats()
+    await nextTick()
+    scheduleLayoutUpdate()
+  } catch (error) {
+    console.error('Failed to load chat messages:', error)
+    messages.value = []
+    loadErrorMessage.value = 'Não foi possível carregar esta conversa.'
+  } finally {
+    isLoadingMessages.value = false
+  }
+}
+
 onMounted(() => {
-  let restoredFromStorage = false
-  const storageKey = messagesStorageKey.value
-  if (storageKey) {
-    const stored = window.sessionStorage.getItem(storageKey)
-    if (stored) {
-      try {
-        messages.value = JSON.parse(stored) as Message[]
-        restoredFromStorage = true
-      } catch {
-        messages.value = []
-      }
+  const qMessage = initialStore.message
+  const qResponse = initialStore.response
+
+  if (qMessage) {
+    messages.value.push({
+      id: 'initial-user',
+      sender: Sender.USER,
+      content: qMessage,
+    })
+  }
+  if (qResponse) {
+    const assistantMessage: Message = {
+      id: 'initial-assistant',
+      sender: Sender.ASSISTANT,
+      content: qResponse,
+    }
+    messages.value.push(assistantMessage)
+    const persistKey = initialAnimationKey.value
+    if (persistKey && animationStore.hasAnimated(persistKey)) {
+      typingMessageId.value = null
+    } else {
+      startTyping(assistantMessage, persistKey || undefined)
     }
   }
+  initialStore.clear()
 
-  if (!restoredFromStorage) {
-    const qMessage = initialStore.message
-    const qResponse = initialStore.response
-
-    if (qMessage) {
-      messages.value.push({
-        id: 'initial-user',
-        sender: Sender.USER,
-        content: qMessage,
-      })
-    }
-    if (qResponse) {
-      const assistantMessage: Message = {
-        id: 'initial-assistant',
-        sender: Sender.ASSISTANT,
-        content: qResponse,
-      }
-      messages.value.push(assistantMessage)
-      const persistKey = initialAnimationKey.value
-      if (persistKey && animationStore.hasAnimated(persistKey)) {
-        typingMessageId.value = null
-      } else {
-        startTyping(assistantMessage, persistKey || undefined)
-      }
-    }
-    initialStore.clear()
-
-    // Save to storage immediately
-    const storageKey = messagesStorageKey.value
-    if (storageKey) {
-      window.sessionStorage.setItem(storageKey, JSON.stringify(messages.value))
-    }
-  }
   lastScrollY = window.scrollY
   scheduleLayoutUpdate()
   window.addEventListener('scroll', handleScroll, { passive: true })
@@ -294,32 +315,23 @@ onMounted(() => {
   window.addEventListener('touchstart', handleTouchStart, { passive: true })
   window.addEventListener('touchmove', handleTouchMove, { passive: false })
   window.addEventListener('resize', scheduleLayoutUpdate)
+  void loadMessages()
 })
-
-watch(
-  messages,
-  async (value) => {
-    const storageKey = messagesStorageKey.value
-    if (!storageKey) {
-      return
-    }
-    window.sessionStorage.setItem(storageKey, JSON.stringify(value))
-    await nextTick()
-    scheduleLayoutUpdate()
-  },
-  { deep: true },
-)
 
 watch(isAllowingBottomOverscroll, async () => {
   await nextTick()
   scheduleLayoutUpdate()
 })
 
-onBeforeRouteLeave(() => {
-  const storageKey = messagesStorageKey.value
-  if (storageKey) {
-    window.sessionStorage.removeItem(storageKey)
+watch(chatId, (value, previousValue) => {
+  if (value && value !== previousValue) {
+    messages.value = []
+    loadErrorMessage.value = ''
+    void loadMessages()
   }
+})
+
+onBeforeRouteLeave(() => {
   if (initialAnimationKey.value) {
     animationStore.clearAnimated(initialAnimationKey.value)
   }
@@ -346,6 +358,7 @@ onBeforeUnmount(() => {
     :class="{ 'allow-bottom-overscroll': isAllowingBottomOverscroll }"
     ref="chatContainerRef"
   >
+    <p v-if="loadErrorMessage" class="chat-error">{{ loadErrorMessage }}</p>
     <section class="messages" ref="messagesRef">
       <ChatMessage
         v-for="message in messages"
@@ -385,6 +398,15 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+}
+
+.chat-error {
+  margin: 24px auto 0;
+  max-width: 980px;
+  width: 100%;
+  padding: 0 24px;
+  color: #b3261e;
+  font-weight: 600;
 }
 
 .messages {

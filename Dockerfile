@@ -3,6 +3,9 @@ FROM oven/bun:alpine AS builder
 
 WORKDIR /app
 
+ARG API_URL
+ENV API_URL=${API_URL}
+
 # Copy lock and manifest first to cache installs
 COPY package.json bun.lock* ./
 RUN bun install

@@ -1,5 +1,5 @@
 import { api } from '../api'
-import type { CreateChatResponse, IChat, ListMessagesResponse } from './chat.interface'
+import type { CreateChatResponse, IChat, ListChatsResponse, ListMessagesResponse } from './chat.interface'
 import type { Chat, Message } from './chat.model'
 
 export class ChatController implements IChat {
@@ -10,6 +10,10 @@ export class ChatController implements IChat {
   async sendMessage(chatId: Chat['id'], message: string): Promise<Message> {
     const url = `/chats/${chatId}/messages`
     return await api.post<Message>(url, { message })
+  }
+
+  async listChats(): Promise<ListChatsResponse> {
+    return await api.get<ListChatsResponse>('/chats')
   }
 
   async listMessages(chatId: Chat['id']): Promise<ListMessagesResponse> {
