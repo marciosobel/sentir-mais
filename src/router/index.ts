@@ -3,6 +3,7 @@ import { useInitialChatStore } from '@/stores/initial-chat'
 import HomeView from '@/views/HomeView.vue'
 import ChatView from '@/views/ChatView.vue'
 import DashboardWeekView from '@/views/dashboard/DashboardWeekView.vue'
+import DashboardTimelineView from '@/views/dashboard/DashboardTimelineView.vue'
 import ServicesView from '@/views/ServicesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import { useAuthStore } from '@/stores/auth.store'
@@ -30,6 +31,11 @@ const router = createRouter({
           path: 'week',
           name: 'dashboard-week',
           component: DashboardWeekView,
+        },
+        {
+          path: 'timeline',
+          name: 'dashboard-timeline',
+          component: DashboardTimelineView,
         },
       ],
     },

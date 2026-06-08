@@ -6,6 +6,7 @@ import {
   CalendarDays,
   HeartHandshake,
   HouseHeart,
+  ListTree,
   Plus,
   UserRound,
   LogOut,
@@ -31,6 +32,11 @@ const sidebarButtons = ref<SidebarButton[]>([
     icon: CalendarDays,
     label: 'Sua semana',
     path: '/dashboard/week',
+  },
+  {
+    icon: ListTree,
+    label: 'Linha do tempo',
+    path: '/dashboard/timeline',
   },
   {
     icon: HeartHandshake,

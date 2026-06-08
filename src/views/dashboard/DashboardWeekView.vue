@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import { computed, onMounted, ref } from 'vue'
 import { useDashboard } from '@/http'
 import type { WeeklySummary } from '@/http/dashboard'
 import WeeklyEmotionsCard from './components/WeeklyEmotionsCard.vue'
 import WeeklyEventsSection from './components/WeeklyEventsSection.vue'
+
+dayjs.extend(utc)
 
 const dashboard = useDashboard()
 const summary = ref<WeeklySummary | null>(null)
@@ -16,7 +19,7 @@ const weekRangeLabel = computed(() => {
     return ''
   }
 
-  const weekStart = dayjs(summary.value.weekStart)
+  const weekStart = dayjs.utc(summary.value.weekStart)
   const weekEnd = weekStart.add(6, 'day')
 
   return `${weekStart.format('DD/MM')} até ${weekEnd.format('DD/MM')}`
