@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useDashboard } from '@/http'
 import type { DashboardTimeline } from '@/http/dashboard'
 import TimelineDayCard from './components/TimelineDayCard.vue'
+import TimelineOverviewCard from './components/TimelineOverviewCard.vue'
 
 dayjs.extend(utc)
 
@@ -57,6 +58,9 @@ onMounted(async () => {
         <p class="eyebrow">Linha do tempo</p>
         <h1 v-if="timeline">{{ rangeLabel }}</h1>
         <h1 v-else>Sua linha do tempo</h1>
+        <p class="intro-copy">
+          Um resumo diário para te ajudar a perceber padrões de sentimento e os eventos que mais pesaram.
+        </p>
       </div>
 
       <form class="filter-form" @submit.prevent="applyRange">
@@ -78,9 +82,12 @@ onMounted(async () => {
       Nenhum registro encontrado neste período.
     </div>
 
-    <section v-else-if="timeline" class="timeline-grid">
-      <TimelineDayCard v-for="day in timeline.days" :key="day.dayStart" :day="day" />
-    </section>
+    <template v-else-if="timeline">
+      <TimelineOverviewCard :days="timeline.days" />
+      <section class="timeline-grid">
+        <TimelineDayCard v-for="day in timeline.days" :key="day.dayStart" :day="day" />
+      </section>
+    </template>
   </main>
 </template>
 
@@ -114,6 +121,13 @@ onMounted(async () => {
 .timeline-header h1 {
   margin: 0;
   font-size: 1.35rem;
+}
+
+.intro-copy {
+  margin: 0.45rem 0 0;
+  max-width: 560px;
+  line-height: 1.5;
+  opacity: 0.8;
 }
 
 .filter-form {

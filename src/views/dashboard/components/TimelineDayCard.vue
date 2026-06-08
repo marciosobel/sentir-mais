@@ -2,7 +2,7 @@
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import type { DailySummary } from '@/http/dashboard'
-import { getEmotionMeta } from '../emotions'
+import { getEmotionLabel, getEmotionMeta } from '../emotions'
 
 dayjs.extend(utc)
 
@@ -16,7 +16,7 @@ defineProps<{
     <header class="timeline-day-header">
       <div>
         <p class="timeline-day-label">{{ dayjs.utc(day.dayStart).format('DD/MM/YYYY') }}</p>
-        <h2>{{ day.dominantFeelings[0]?.label || 'Sem sentimento dominante' }}</h2>
+        <h2>{{ day.dominantFeelings[0] ? getEmotionLabel(day.dominantFeelings[0].label) : 'Dia sem sentimento dominante definido' }}</h2>
       </div>
 
       <span
@@ -28,16 +28,19 @@ defineProps<{
       </span>
     </header>
 
-    <p v-if="day.mainEvents[0]" class="main-event">{{ day.mainEvents[0] }}</p>
+    <div v-if="day.mainEvents[0]" class="event-block">
+      <p class="event-label">Evento mais marcante</p>
+      <p class="main-event">{{ day.mainEvents[0] }}</p>
+    </div>
 
     <ul v-if="day.timelinePoints.length" class="timeline-points">
       <li v-for="(point, index) in day.timelinePoints" :key="`${day.dayStart}-${index}`">
-        <strong>{{ point.primaryFeeling }}</strong>
+        <strong>{{ getEmotionLabel(point.primaryFeeling) }}</strong>
         <span>{{ point.supportingEvent || 'Sem evento complementar.' }}</span>
       </li>
     </ul>
 
-    <p v-else class="empty-copy">Sem pontos de timeline neste dia.</p>
+    <p v-else class="empty-copy">Sem detalhes adicionais registrados neste dia.</p>
   </article>
 </template>
 
@@ -78,6 +81,20 @@ defineProps<{
 .main-event {
   margin: 0;
   line-height: 1.45;
+}
+
+.event-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.event-label {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.68;
 }
 
 .timeline-points {
